@@ -13,6 +13,38 @@ A fast, lightweight native desktop database viewer for MySQL and MariaDB, writte
 - **Inline Editing**: Double-click cells to edit, insert new rows, mark rows for deletion, and commit or discard batched changes in a single parameterized transaction (for tables with primary keys).
 - **CSV & JSON Export**: Export table pages or SQL query results to RFC 4180 CSV or formatted JSON files.
 
+## Screenshots
+
+### Saved Connections
+![Saved Connections](docs/screenshots/connections.png)
+
+### Table Viewer (Multi-AND Filtering & Column Sorting)
+![Table Viewer](docs/screenshots/table-viewer.png)
+
+### Multi-Tab SQL Editor
+![SQL Editor](docs/screenshots/sql-editor.png)
+
+## Quick Install (Linux)
+
+Install the latest release binary to `~/.local/bin/rust-dbviewer`, add `~/.local/bin` to your shell `PATH` if needed, and register the desktop application entry and icon:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/rafadepaula-olist/rust-dbviewer/main/install.sh | bash
+```
+
+If the repository is private, pass a `GITHUB_TOKEN` (or ensure `gh` CLI is authenticated):
+
+```bash
+curl -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" \
+  https://raw.githubusercontent.com/rafadepaula-olist/rust-dbviewer/main/install.sh | bash
+```
+
+Or run the script directly from a local clone:
+
+```bash
+./install.sh
+```
+
 ## Prerequisites
 
 - Stable Rust toolchain (`rustc` and `cargo` via [rustup](https://rustup.rs/))
