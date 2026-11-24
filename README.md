@@ -32,13 +32,6 @@ Install the latest release binary to `~/.local/bin/rust-dbviewer`, add `~/.local
 curl -fsSL https://raw.githubusercontent.com/rafadepaula-olist/rust-dbviewer/main/install.sh | bash
 ```
 
-If the repository is private, pass a `GITHUB_TOKEN` (or ensure `gh` CLI is authenticated):
-
-```bash
-curl -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" \
-  https://raw.githubusercontent.com/rafadepaula-olist/rust-dbviewer/main/install.sh | bash
-```
-
 Or run the script directly from a local clone:
 
 ```bash
