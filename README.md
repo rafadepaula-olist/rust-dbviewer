@@ -38,6 +38,14 @@ Or run the script directly from a local clone:
 ./install.sh
 ```
 
+## Quick Install (Windows — PowerShell)
+
+Install the latest Windows release binary to `%LOCALAPPDATA%\Programs\rust-dbviewer\rust-dbviewer.exe`, add it to your User `PATH`, and create a **Rust DBViewer** Start Menu shortcut:
+
+```powershell
+irm https://raw.githubusercontent.com/rafadepaula-olist/rust-dbviewer/main/install.ps1 | iex
+```
+
 ## Prerequisites
 
 - Stable Rust toolchain (`rustc` and `cargo` via [rustup](https://rustup.rs/))
