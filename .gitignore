@@ -1,0 +1,6 @@
+/target/
+/base-to-copy/
+docs/superpowers/
+implementation_plan.md
+*.log
+.DS_Store
