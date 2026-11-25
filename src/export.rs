@@ -15,17 +15,34 @@ pub enum ExportError {
     Json(#[from] serde_json::Error),
 }
 
+fn neutralize_csv_formula(value: &str) -> String {
+    if matches!(
+        value.as_bytes().first(),
+        Some(b'=' | b'+' | b'-' | b'@' | b'\t' | b'\r')
+    ) {
+        format!("'{value}")
+    } else {
+        value.to_string()
+    }
+}
+
 fn cell_to_csv_field(cell: &CellValue) -> String {
     match cell {
         CellValue::Null => String::new(),
+        CellValue::Text(s) => neutralize_csv_formula(s),
         other => other.to_display_string(),
     }
 }
 
-/// Export a `QueryResult` to a CSV string with proper RFC 4180 escaping.
+/// Export a `QueryResult` to a CSV string with proper RFC 4180 escaping
+/// and formula-injection neutralization for text cells and headers.
 pub fn to_csv_string(result: &QueryResult) -> Result<String, ExportError> {
     let mut writer = csv::Writer::from_writer(Vec::new());
-    let headers: Vec<&str> = result.columns.iter().map(|c| c.name.as_str()).collect();
+    let headers: Vec<String> = result
+        .columns
+        .iter()
+        .map(|c| neutralize_csv_formula(&c.name))
+        .collect();
     writer.write_record(&headers)?;
 
     for row in &result.rows {
@@ -187,5 +204,41 @@ mod tests {
 
         let _ = fs::remove_file(&csv_path);
         let _ = fs::remove_file(&json_path);
+    }
+
+    #[test]
+    fn csv_export_neutralizes_formula_injection() {
+        let result = QueryResult {
+            columns: vec![
+                ColumnInfo {
+                    name: "=cmd".to_string(),
+                    data_type: "VARCHAR".to_string(),
+                    nullable: true,
+                    is_primary_key: false,
+                    default_value: None,
+                },
+                ColumnInfo {
+                    name: "amount".to_string(),
+                    data_type: "INT".to_string(),
+                    nullable: false,
+                    is_primary_key: false,
+                    default_value: None,
+                },
+            ],
+            rows: vec![
+                vec![CellValue::Text("=1+1".to_string()), CellValue::Int(-42)],
+                vec![CellValue::Text("+SUM(A1)".to_string()), CellValue::Int(10)],
+                vec![CellValue::Text("-2+3".to_string()), CellValue::Int(0)],
+                vec![CellValue::Text("@SUM(1)".to_string()), CellValue::Int(1)],
+            ],
+            total_rows: Some(4),
+            affected_rows: None,
+            execution_ms: 1,
+            primary_key_columns: vec![],
+        };
+
+        let csv_str = to_csv_string(&result).expect("csv export should succeed");
+        let expected = "'=cmd,amount\n'=1+1,-42\n'+SUM(A1),10\n'-2+3,0\n'@SUM(1),1\n";
+        assert_eq!(csv_str, expected);
     }
 }

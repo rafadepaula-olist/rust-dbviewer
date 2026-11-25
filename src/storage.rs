@@ -1,5 +1,6 @@
 use crate::models::ConnectionConfig;
 use std::fs;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use thiserror::Error;
 
@@ -46,15 +47,37 @@ pub fn load_connections_from(path: &Path) -> Result<Vec<ConnectionConfig>, Stora
 }
 
 /// Save connections to a specific file path, creating parent directories if needed.
+/// Restricts file and directory permissions to owner-only on Unix systems.
 pub fn save_connections_to(
     path: &Path,
     connections: &[ConnectionConfig],
 ) -> Result<(), StorageError> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            fs::set_permissions(parent, fs::Permissions::from_mode(0o700))?;
+        }
     }
     let json = serde_json::to_string_pretty(connections)?;
-    fs::write(path, json)?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
+        let mut file = fs::OpenOptions::new()
+            .create(true)
+            .write(true)
+            .truncate(true)
+            .mode(0o600)
+            .open(path)?;
+        file.write_all(json.as_bytes())?;
+        fs::set_permissions(path, fs::Permissions::from_mode(0o600))?;
+    }
+    #[cfg(not(unix))]
+    {
+        let mut file = fs::File::create(path)?;
+        file.write_all(json.as_bytes())?;
+    }
     Ok(())
 }
 
@@ -93,10 +116,29 @@ mod tests {
 
         let c2 = ConnectionConfig::new("Staging", "10.0.0.5", 3307, "readonly", "", None);
 
-        let original = vec![c1, c2];
+        let original = vec![c1.clone(), c2.clone()];
         save_connections_to(&path, &original).expect("save should succeed");
+
+        // Plaintext passwords must never be written to disk.
+        let raw_json = fs::read_to_string(&path).expect("read saved json");
+        assert!(!raw_json.contains("secret"));
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mode = fs::metadata(&path).unwrap().permissions().mode() & 0o777;
+            assert_eq!(mode, 0o600);
+        }
+
         let loaded = load_connections_from(&path).expect("load should succeed");
-        assert_eq!(original, loaded);
+        let mut expected_c1 = c1;
+        expected_c1.password.clear();
+        assert_eq!(vec![expected_c1, c2], loaded);
+
+        // Debug output must redact passwords.
+        let debug_str = format!("{:?}", original[0]);
+        assert!(!debug_str.contains("secret"));
+        assert!(debug_str.contains("[REDACTED]"));
 
         let _ = fs::remove_file(&path);
     }

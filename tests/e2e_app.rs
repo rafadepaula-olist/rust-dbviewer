@@ -134,7 +134,9 @@ fn e2e_storage_roundtrip() {
 
     save_connections_to(&path, &[prod.clone(), local.clone()]).expect("save connections");
     let loaded = load_connections_from(&path).expect("load connections");
-    assert_eq!(loaded, vec![prod, local]);
+    let mut expected_prod = prod;
+    expected_prod.password.clear();
+    assert_eq!(loaded, vec![expected_prod, local]);
 
     let _ = fs::remove_file(&path);
 }

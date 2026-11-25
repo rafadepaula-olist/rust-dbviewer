@@ -28,7 +28,7 @@ impl MysqlClient {
         database_override: Option<&str>,
     ) -> MySqlConnectOptions {
         let ssl_mode = if config.use_ssl {
-            MySqlSslMode::Required
+            MySqlSslMode::VerifyIdentity
         } else {
             MySqlSslMode::Disabled
         };

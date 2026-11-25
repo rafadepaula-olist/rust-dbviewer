@@ -7,13 +7,14 @@ fn default_connect_timeout() -> u64 {
 }
 
 /// Saved or active MySQL/MariaDB connection configuration.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ConnectionConfig {
     pub id: String,
     pub name: String,
     pub host: String,
     pub port: u16,
     pub username: String,
+    #[serde(default, skip_serializing)]
     pub password: String,
     pub database: Option<String>,
     #[serde(default)]
@@ -22,6 +23,23 @@ pub struct ConnectionConfig {
     pub connect_timeout_secs: u64,
     #[serde(default)]
     pub color: Option<String>,
+}
+
+impl fmt::Debug for ConnectionConfig {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ConnectionConfig")
+            .field("id", &self.id)
+            .field("name", &self.name)
+            .field("host", &self.host)
+            .field("port", &self.port)
+            .field("username", &self.username)
+            .field("password", &"[REDACTED]")
+            .field("database", &self.database)
+            .field("use_ssl", &self.use_ssl)
+            .field("connect_timeout_secs", &self.connect_timeout_secs)
+            .field("color", &self.color)
+            .finish()
+    }
 }
 
 impl Default for ConnectionConfig {
